@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <script src="aframe.min.js"></script>
+    <script src="mindar-image-afreme-prod.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .message {
+            position: absolute;
+            top: 20px;
+            width: 80%;
+            text-align: center;
+            padding: 10px;
+            background-color: #ffffff;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        #muteButton {
+            background: rgba(235, 232, 232, 0.1);
+            border: none;
+            border-radius: 10px;
+            padding-top: 5px;
+        }
+
+        #muteButton img {
+            width: 30px;
+        }
+    </style>
+    <script>
+
+        //Verifica se é despositivos IOS
+        function isIOS() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+
+        //Verifica quando o link e clicado
+        AFRAME.registerComponent("open-link", {
+            schema: {
+                url: { type: "string", default: "" },
+            },
+            init: function () {
+                this.el.addEventListener("click", () => {
+                    window.open(this.data.url, "_blank");
+                });
+            },
+        });
+
+        AFRAME.registerComponent("play-on-visible", {
+            init: function () {
+                var video = document.querySelector("#targetVideo");
+                this.el.addEventListener("targetFound", function () {
+                    video.play();
+                    document.querySelector(".message").style.display = "none";
+                    // Iniciar animação do botão
+                    document.querySelector("#button").emit("startAnimation");
+                });
+                this.el.addEventListener("targetLost", function () {
+                    video.pause();
+                    document.querySelector(".message").style.display = "block";
+                    // Reiniciar animação do botão
+                    document.querySelector("#button").emit("resetAnimation");
+                });
+            },
+        });
+
+        window.onload = function () {
+            var video = document.querySelector("#targetVideo");
+            const muteImg = document.getElementById('img-mute');
+
+            // A função de clicar para desmutar é necessária para permitir som em dispositivos móveis
+            document.body.addEventListener('click', function() {
+                video.muted = false;
+                muteImg.src = "https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/audio.png?v=1722816178335";
+            }, { once: true });
+
+            if (isIOS()) {
+                video.muted = true;
+            } else {
+                video.muted = false;
+                muteImg.src = "https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/audio.png?v=1722816178335";
+            }
+
+            var muteButton = document.getElementById("muteButton");
+            muteButton.addEventListener("click", function () {
+                video.muted = !video.muted;
+                muteImg.src = video.muted ? "https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/mute.png?v=1722816172929" : "https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/audio.png?v=1722816178335";
+            });
+
+            // Monitorar mudanças no volume do dispositivo
+            window.addEventListener("volumechange", function () {
+                if (video.muted && video.volume > 0) {
+                    video.muted = false;
+                    muteImg.src = "https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/audio.png?v=1722816178335";
+                }
+            });
+        };
+    </script>
+</head>
+<body>
+    <div class="message">Aponte a câmera para o santinho...</div>
+    <a-scene mindar-image="imageTargetSrc: https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/targets.mind?v=1722815142489" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-assets>
+            <img id="card" src="https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/santinho.png?v=1722815359389" crossorigin="anonymous">
+            <video id="targetVideo" loop="" src="https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/video2.mp4?v=1722816184783" crossorigin="anonymous" playsinline="" autoplay="" preload="auto"></video>
+            <!-- Ícone do botão -->
+            <img id="icon1" src="https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/insta.png?v=1722816209380">
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+
+        <a-entity mindar-image-target="https://cdn.glitch.global/f499f7ec-6f8e-4196-bb89-4b0be70f609c/targets.mind?v=1722815142489" play-on-visible="">
+            <a-plane src="#card" position="0 0 0" width="0.5625" height="1" rotation="0 0 0"></a-plane>
+            <a-video src="#targetVideo" position="0 0 0.1" width="0.5" height="0.5" rotation="0 0 0"></a-video>
+
+            <!-- Botão clicável com animação -->
+            <a-plane id="button" src="#icon1" position="0 -0.8 0.2" width="0.7" height="0.7" rotation="0 0 0" class="clickable" open-link="url: https://instagram.com/reidosgifs"
+                    material="transparent: true"
+                    animation__pulse="property: scale; dir: alternate; dur: 3000; loop: true; to: 0.7 0.7">
+            </a-plane>
+        </a-entity>
+    </a-scene>
+    <button id="muteButton" style="position: fixed; top: 10px; left: 10px; z-index: 100">
+        <img id="img-mute" src="assets/mute.png" alt="">
+    </button>
+</body>
+</html>
